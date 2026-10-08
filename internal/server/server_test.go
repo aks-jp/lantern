@@ -15,6 +15,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/aks-jp/lantern/internal/auth"
 	"github.com/aks-jp/lantern/internal/searxng"
 	"github.com/aks-jp/lantern/internal/tools"
 )
@@ -226,5 +227,56 @@ func TestRoutes(t *testing.T) {
 		if resp.StatusCode != tt.status || !strings.Contains(string(b), tt.body) {
 			t.Errorf("%s %s = %d %s", tt.method, tt.path, resp.StatusCode, b)
 		}
+	}
+}
+
+type headerTransport struct {
+	header, value string
+}
+
+func (h headerTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.Header.Set(h.header, h.value)
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+func TestAuthEndToEnd(t *testing.T) {
+	env := newTestEnv(t, auth.Middleware(auth.NewStaticKeys([]string{"k1", "k2"}), slog.New(slog.DiscardHandler)))
+
+	for _, tc := range []struct{ header, value string }{
+		{"Authorization", "Bearer k1"},
+		{"X-API-Key", "k2"},
+	} {
+		session := connect(t, env.url+"/mcp", &http.Client{Transport: headerTransport{tc.header, tc.value}})
+		if res, text := callText(t, session, "web_search", map[string]any{"query": "x"}); res.IsError {
+			t.Errorf("%s: %s", tc.header, text)
+		}
+	}
+
+	for _, tc := range []struct{ header, value string }{{"", ""}, {"Authorization", "Bearer nope"}} {
+		req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, env.url+"/mcp",
+			strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/list"}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json, text/event-stream")
+		if tc.header != "" {
+			req.Header.Set(tc.header, tc.value)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Errorf("%q: status %d, want 401", tc.value, resp.StatusCode)
+		}
+	}
+
+	resp, err := http.Get(env.url + "/healthz") //nolint:noctx // test
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("/healthz must not require auth, got %d", resp.StatusCode)
 	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/aks-jp/lantern/internal/auth"
 	"github.com/aks-jp/lantern/internal/config"
 	"github.com/aks-jp/lantern/internal/searxng"
 	"github.com/aks-jp/lantern/internal/server"
@@ -46,6 +47,7 @@ func serve() int {
 	}
 	logger := newLogger(os.Stderr, cfg)
 	slog.SetDefault(logger)
+	logStartup(cfg, logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -75,9 +77,19 @@ func buildServer(cfg *config.Config, logger *slog.Logger) *http.Server {
 		SnippetMaxChars:   cfg.SnippetMaxChars,
 		AllowedCategories: cfg.AllowedCategories,
 		Logger:            logger,
+		KeyID:             auth.HeaderKeyID,
 	})
 
-	h := server.NewHandler(server.Options{Path: cfg.Path, MCP: mcpServer, Logger: logger})
+	var authenticator auth.Authenticator
+	if len(cfg.MCPAPIKeys) > 0 {
+		authenticator = auth.NewStaticKeys(cfg.MCPAPIKeys)
+	}
+	h := server.NewHandler(server.Options{
+		Path:       cfg.Path,
+		MCP:        mcpServer,
+		Logger:     logger,
+		Middleware: auth.Middleware(authenticator, logger),
+	})
 	return server.New(cfg.Listen, h, cfg.SearXNGTimeout, logger)
 }
 
@@ -87,4 +99,32 @@ func newLogger(w io.Writer, cfg *config.Config) *slog.Logger {
 		return slog.New(slog.NewTextHandler(w, opts))
 	}
 	return slog.New(slog.NewJSONHandler(w, opts))
+}
+
+// logStartup logs the effective configuration without secrets and warns about
+// insecure settings.
+func logStartup(cfg *config.Config, logger *slog.Logger) {
+	keyIDs := make([]string, len(cfg.MCPAPIKeys))
+	for i, k := range cfg.MCPAPIKeys {
+		keyIDs[i] = auth.KeyID(k)
+	}
+	logger.Info("starting lantern",
+		slog.String("version", version),
+		slog.String("searxng_url", cfg.SearXNGURL.Redacted()),
+		slog.Bool("searxng_api_key", cfg.SearXNGAPIKey != ""),
+		slog.String("searxng_api_key_header", cfg.SearXNGAPIKeyHeader),
+		slog.Duration("searxng_timeout", cfg.SearXNGTimeout),
+		slog.String("listen", cfg.Listen),
+		slog.String("path", cfg.Path),
+		slog.Any("mcp_key_ids", keyIDs),
+		slog.Any("categories", cfg.AllowedCategories),
+		slog.String("default_language", cfg.DefaultLanguage),
+		slog.Int("max_results", cfg.MaxResults),
+	)
+	if len(cfg.MCPAPIKeys) == 0 {
+		logger.Warn("MCP endpoint is reachable WITHOUT authentication; set MCP_API_KEYS or MCP_API_KEYS_FILE unless access is restricted otherwise")
+	}
+	if cfg.SearXNGInsecureSkipVerify {
+		logger.Warn("TLS certificate verification for SearXNG is DISABLED (SEARXNG_INSECURE_SKIP_VERIFY=true); use only for testing")
+	}
 }
