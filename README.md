@@ -21,9 +21,11 @@ Lantern    ──(X-API-Key: <key>, optional)───────────�
 | Tool | Parameters | Notes |
 | --- | --- | --- |
 | `web_search` | `query` (required, 1–500 chars), `categories`, `language`, `time_range`, `page`, `max_results`, `safesearch` | `categories` is an enum of `ALLOWED_CATEGORIES`; defaults to the first one |
-| `news_search` | same as `web_search` without `categories` | Searches the `news` category; `time_range` defaults to `week`. Only registered if `news` is an allowed category |
+| `news_search` | same as `web_search` without `categories` | Searches the `news` category. Only registered if `news` is an allowed category |
 
 Parameters: `language` is a code such as `en`, `de-DE` or `auto`; `time_range` is `day`, `week`, `month` or `year`; `page` starts at 1; `max_results` is capped at `MAX_RESULTS`; `safesearch` is 0 (off), 1 (moderate) or 2 (strict).
+
+About `time_range`: SearXNG skips every engine that does not support the time filter while it is set. In the `news` category that is often all but one engine, which can leave no results at all. Neither tool sets a time range by default, and the tool descriptions tell the model to use it only when a period is actually required.
 
 Example text output:
 

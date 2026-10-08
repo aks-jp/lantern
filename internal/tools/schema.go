@@ -9,7 +9,7 @@ var timeRanges = []any{"day", "week", "month", "year"}
 
 // inputSchema builds the input schema of a search tool. withCategories adds
 // the categories parameter restricted to the configured categories.
-func inputSchema(o Options, withCategories bool, defaultTimeRange string) *jsonschema.Schema {
+func inputSchema(o Options, withCategories bool) *jsonschema.Schema {
 	props := map[string]*jsonschema.Schema{
 		"query": {
 			Type:        "string",
@@ -24,7 +24,7 @@ func inputSchema(o Options, withCategories bool, defaultTimeRange string) *jsons
 		},
 		"time_range": {
 			Type:        "string",
-			Description: "Only return results from the last day, week, month or year.",
+			Description: "Only return results from the last day, week, month or year. Omit it unless the user asks for a period: many search engines do not support this filter and are skipped when it is set, so results can become sparse or empty.",
 			Enum:        timeRanges,
 		},
 		"page": {
@@ -45,9 +45,6 @@ func inputSchema(o Options, withCategories bool, defaultTimeRange string) *jsons
 			Minimum:     ptr(0.0),
 			Maximum:     ptr(2.0),
 		},
-	}
-	if defaultTimeRange != "" {
-		props["time_range"].Description += " Defaults to " + defaultTimeRange + "."
 	}
 	if withCategories {
 		enum := make([]any, len(o.AllowedCategories))

@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project follows [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-08
+
+### Changed
+
+- `news_search` no longer defaults to `time_range=week`. SearXNG skips engines without time filter support while a time range is set, which left only one or no news engine and often no results. The `time_range` description now warns about this.
+
 ## [0.1.0] - 2026-10-08
 
 ### Added

@@ -37,8 +37,8 @@ func fakeSearXNG(t *testing.T) *httptest.Server {
 		case strings.HasPrefix(query, "fail-json"):
 			_, _ = w.Write([]byte("<html>"))
 		case q.Get("categories") == "news":
-			if q.Get("time_range") != "week" {
-				t.Errorf("news_search must default to time_range=week, got %q", q.Get("time_range"))
+			if q.Has("time_range") {
+				t.Errorf("news_search must not set a default time_range, got %q", q.Get("time_range"))
 			}
 			serveFixture(t, w, "search_news.json")
 		case query == "nothing":

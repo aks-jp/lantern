@@ -36,7 +36,7 @@ func testOptions(s Searcher) Options {
 
 func TestQueryDefaults(t *testing.T) {
 	o := testOptions(nil)
-	q, err := o.query(SearchInput{Query: "  hello  "}, nil, "")
+	q, err := o.query(SearchInput{Query: "  hello  "}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestQueryOverrides(t *testing.T) {
 	zero := 0
 	q, err := testOptions(nil).query(SearchInput{
 		Query: "x", Categories: []string{"it", "news"}, Language: "en", TimeRange: "day", Page: 3, SafeSearch: &zero,
-	}, nil, "")
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,14 +60,16 @@ func TestQueryOverrides(t *testing.T) {
 }
 
 func TestQueryNews(t *testing.T) {
-	q, err := testOptions(nil).query(SearchInput{Query: "x", Categories: []string{"it"}}, []string{"news"}, "week")
+	q, err := testOptions(nil).query(SearchInput{Query: "x", Categories: []string{"it"}}, []string{"news"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(q.Categories, []string{"news"}) || q.TimeRange != "week" {
+	// No default time range: many news engines do not support the filter and
+	// SearXNG skips them when it is set.
+	if !slices.Equal(q.Categories, []string{"news"}) || q.TimeRange != "" {
 		t.Errorf("news defaults not applied: %+v", q)
 	}
-	q, _ = testOptions(nil).query(SearchInput{Query: "x", TimeRange: "year"}, []string{"news"}, "week")
+	q, _ = testOptions(nil).query(SearchInput{Query: "x", TimeRange: "year"}, []string{"news"})
 	if q.TimeRange != "year" {
 		t.Errorf("time_range override ignored: %+v", q)
 	}
@@ -75,10 +77,10 @@ func TestQueryNews(t *testing.T) {
 
 func TestQueryValidation(t *testing.T) {
 	o := testOptions(nil)
-	if _, err := o.query(SearchInput{Query: "   "}, nil, ""); err == nil {
+	if _, err := o.query(SearchInput{Query: "   "}, nil); err == nil {
 		t.Error("blank query must fail")
 	}
-	if _, err := o.query(SearchInput{Query: "x", Categories: []string{"images"}}, nil, ""); err == nil || !strings.Contains(err.Error(), "allowed: general, news, it") {
+	if _, err := o.query(SearchInput{Query: "x", Categories: []string{"images"}}, nil); err == nil || !strings.Contains(err.Error(), "allowed: general, news, it") {
 		t.Errorf("unknown category must fail with the allowed list, got %v", err)
 	}
 }
@@ -86,7 +88,7 @@ func TestQueryValidation(t *testing.T) {
 func TestHandlerMaxResults(t *testing.T) {
 	resp := loadFixture(t, "search_general.json")
 	f := &fakeSearcher{resp: resp}
-	h := testOptions(f).handler("web_search", nil, "")
+	h := testOptions(f).handler("web_search", nil)
 
 	_, out, err := h(context.Background(), nil, SearchInput{Query: "x", MaxResults: 2})
 	if err != nil {
@@ -103,7 +105,7 @@ func TestHandlerMaxResults(t *testing.T) {
 
 func TestHandlerUpstreamError(t *testing.T) {
 	f := &fakeSearcher{err: &searxng.Error{Kind: searxng.KindRateLimited, Status: 429, Err: errors.New("x")}}
-	res, _, err := testOptions(f).handler("web_search", nil, "")(context.Background(), nil, SearchInput{Query: "x"})
+	res, _, err := testOptions(f).handler("web_search", nil)(context.Background(), nil, SearchInput{Query: "x"})
 	if res != nil || err == nil || !strings.Contains(err.Error(), "rate limit") {
 		t.Fatalf("want rate limit tool error, got %v %v", res, err)
 	}

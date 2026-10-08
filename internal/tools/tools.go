@@ -55,7 +55,7 @@ Results contain search-engine snippets, not full page contents. Refine the query
 
 const newsSearchDescription = `Search recent news articles via a SearXNG metasearch engine. Returns headlines with URL, snippet, source engines and publication date when known.
 
-Use this tool for current events and recent developments. By default only results from the last week are returned; set time_range to day, month or year to change that.
+Use this tool for current events and recent developments. News engines return recent articles by default; set time_range only if a specific period is required, because it excludes engines that do not support it.
 
 Results contain snippets, not full articles.`
 
@@ -76,32 +76,32 @@ func Register(s *mcp.Server, searcher Searcher, o Options) {
 		Name:         "web_search",
 		Title:        "Web search",
 		Description:  webSearchDescription,
-		InputSchema:  inputSchema(o, true, ""),
+		InputSchema:  inputSchema(o, true),
 		OutputSchema: outputSchema,
 		Annotations:  annotations,
 	}
-	mcp.AddTool(s, web, o.handler("web_search", nil, ""))
+	mcp.AddTool(s, web, o.handler("web_search", nil))
 
 	if slices.Contains(o.AllowedCategories, "news") {
 		news := &mcp.Tool{
 			Name:         "news_search",
 			Title:        "News search",
 			Description:  newsSearchDescription,
-			InputSchema:  inputSchema(o, false, "week"),
+			InputSchema:  inputSchema(o, false),
 			OutputSchema: outputSchema,
 			Annotations:  annotations,
 		}
-		mcp.AddTool(s, news, o.handler("news_search", []string{"news"}, "week"))
+		mcp.AddTool(s, news, o.handler("news_search", []string{"news"}))
 	} else {
 		o.Logger.Info("news_search disabled because \"news\" is not in ALLOWED_CATEGORIES")
 	}
 }
 
-// handler returns the tool handler. fixedCategories and defaultTimeRange
-// specialise it for news_search.
-func (o Options) handler(name string, fixedCategories []string, defaultTimeRange string) mcp.ToolHandlerFor[SearchInput, SearchOutput] {
+// handler returns the tool handler. fixedCategories specialises it for
+// news_search.
+func (o Options) handler(name string, fixedCategories []string) mcp.ToolHandlerFor[SearchInput, SearchOutput] {
 	return func(ctx context.Context, req *mcp.CallToolRequest, in SearchInput) (*mcp.CallToolResult, SearchOutput, error) {
-		q, err := o.query(in, fixedCategories, defaultTimeRange)
+		q, err := o.query(in, fixedCategories)
 		if err != nil {
 			return nil, SearchOutput{}, err
 		}
@@ -145,12 +145,11 @@ func (o Options) handler(name string, fixedCategories []string, defaultTimeRange
 }
 
 // query validates the input and applies defaults.
-func (o Options) query(in SearchInput, fixedCategories []string, defaultTimeRange string) (searxng.Query, error) {
+func (o Options) query(in SearchInput, fixedCategories []string) (searxng.Query, error) {
 	q := searxng.Query{
 		Q:          strings.TrimSpace(in.Query),
 		Categories: fixedCategories,
 		Language:   o.DefaultLanguage,
-		TimeRange:  defaultTimeRange,
 		Page:       1,
 		SafeSearch: o.DefaultSafeSearch,
 	}
