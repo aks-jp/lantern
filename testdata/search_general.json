@@ -1,0 +1,65 @@
+{
+  "query": "golang context",
+  "number_of_results": 1250000,
+  "results": [
+    {
+      "url": "https://pkg.go.dev/context",
+      "title": "context package - context - Go Packages",
+      "content": "Package context defines the Context type, which carries deadlines, cancellation signals, and other request-scoped values across API boundaries and between processes.",
+      "publishedDate": null,
+      "thumbnail": "",
+      "engine": "duckduckgo",
+      "template": "default.html",
+      "parsed_url": ["https", "pkg.go.dev", "/context", "", "", ""],
+      "img_src": "",
+      "priority": "",
+      "engines": ["duckduckgo", "brave", "startpage"],
+      "positions": [1, 1, 2],
+      "score": 9.0,
+      "category": "general"
+    },
+    {
+      "url": "https://www.pkg.go.dev/context/#pkg-overview",
+      "title": "context - duplicate with fragment and www",
+      "content": "Duplicate entry that must be removed by URL normalisation.",
+      "engine": "bing",
+      "engines": ["bing"],
+      "score": 1.0,
+      "category": "general"
+    },
+    {
+      "url": "https://go.dev/blog/context?utm_source=feed",
+      "title": "Go Concurrency Patterns: Context",
+      "content": "In Go servers,   each incoming request is handled in its own goroutine.\n\nRequest handlers often start additional goroutines to access backends such as databases and RPC services.",
+      "publishedDate": "2014-07-29T00:00:00",
+      "engine": "brave",
+      "engines": ["brave"],
+      "score": 3.5,
+      "category": "general"
+    },
+    {
+      "url": "https://example.org/no-content",
+      "title": "",
+      "engine": "mojeek",
+      "category": "general"
+    }
+  ],
+  "answers": [
+    {"url": "https://go.dev", "template": "answer/legacy.html", "engine": "wikipedia", "answer": "Go is a statically typed, compiled programming language."}
+  ],
+  "corrections": [],
+  "infoboxes": [
+    {
+      "infobox": "Go (programming language)",
+      "id": "https://en.wikipedia.org/wiki/Go_(programming_language)",
+      "content": "Go is a high-level general purpose programming language that is statically typed and compiled.",
+      "img_src": "https://upload.wikimedia.org/go.svg",
+      "urls": [{"title": "Official website", "url": "https://go.dev"}, {"title": "Wikipedia (en)", "url": "https://en.wikipedia.org/wiki/Go_(programming_language)"}],
+      "attributes": [{"label": "Designed by", "value": "Robert Griesemer, Rob Pike, Ken Thompson"}],
+      "engine": "wikipedia",
+      "engines": ["wikipedia"]
+    }
+  ],
+  "suggestions": ["golang context timeout", "golang context withcancel"],
+  "unresponsive_engines": [["qwant", "timeout"]]
+}

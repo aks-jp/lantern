@@ -1,0 +1,9 @@
+{
+  "query": "open source",
+  "number_of_results": 0,
+  "results": [
+    {"url": "https://news.example.com/a", "title": "Open source release", "content": "A new version was released today.", "publishedDate": "2026-10-07T09:15:00+02:00", "engine": "bing news", "engines": ["bing news", "duckduckgo news"], "category": "news"},
+    {"url": "https://news.example.net/b", "title": "Community update", "content": "Maintainers announced a roadmap.", "publishedDate": "2026-10-05 12:00:00", "engine": "duckduckgo news", "engines": ["duckduckgo news"], "category": "news"}
+  ],
+  "answers": [], "infoboxes": [], "suggestions": []
+}
