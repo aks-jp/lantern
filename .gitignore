@@ -1,0 +1,18 @@
+# Binaries and build output
+/bin/
+/dist/
+/lantern
+*.exe
+*.test
+*.out
+coverage.*
+
+# Local configuration and secrets
+.env
+/secrets/*
+!/secrets/.gitkeep
+
+# Editors
+.idea/
+.vscode/
+*.swp
