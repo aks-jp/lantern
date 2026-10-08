@@ -131,6 +131,12 @@ func (c *Client) Search(ctx context.Context, q Query) (*Response, error) {
 }
 
 func classifyTransportError(err error) *Error {
+	// *url.Error embeds the full request URL including the search query,
+	// which must not end up in logs.
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		err = urlErr.Err
+	}
 	if errors.Is(err, context.Canceled) {
 		return &Error{Kind: KindCanceled, Err: err}
 	}

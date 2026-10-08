@@ -114,7 +114,7 @@ func (o Options) handler(name string, fixedCategories []string, defaultTimeRange
 		resp, err := o.searcher.Search(ctx, q)
 		attrs := []any{
 			slog.String("tool", name),
-			slog.Duration("duration", time.Since(start)),
+			slog.Int64("duration_ms", time.Since(start).Milliseconds()),
 			slog.String("key_id", o.keyID(req)),
 		}
 		if o.Logger.Enabled(ctx, slog.LevelDebug) {

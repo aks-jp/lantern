@@ -117,7 +117,7 @@ func logStartup(cfg *config.Config, logger *slog.Logger) {
 		slog.String("searxng_url", cfg.SearXNGURL.Redacted()),
 		slog.Bool("searxng_api_key", cfg.SearXNGAPIKey != ""),
 		slog.String("searxng_api_key_header", cfg.SearXNGAPIKeyHeader),
-		slog.Duration("searxng_timeout", cfg.SearXNGTimeout),
+		slog.String("searxng_timeout", cfg.SearXNGTimeout.String()),
 		slog.String("listen", cfg.Listen),
 		slog.String("path", cfg.Path),
 		slog.Any("mcp_key_ids", keyIDs),

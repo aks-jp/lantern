@@ -198,10 +198,13 @@ func TestSearchTimeout(t *testing.T) {
 	defer close(release)
 
 	c := newClient(t, srv.URL, func(o *Options) { o.Timeout = 50 * time.Millisecond })
-	_, err := c.Search(context.Background(), Query{Q: "x"})
+	_, err := c.Search(context.Background(), Query{Q: "secret-search-term"})
 	var se *Error
 	if !errors.As(err, &se) || se.Kind != KindUnreachable || se.Status != 0 {
 		t.Fatalf("want unreachable, got %v", err)
+	}
+	if strings.Contains(err.Error(), "secret-search-term") {
+		t.Errorf("error must not contain the query: %v", err)
 	}
 }
 
@@ -209,10 +212,13 @@ func TestSearchUnreachable(t *testing.T) {
 	srv := httptest.NewServer(http.NotFoundHandler())
 	u := srv.URL
 	srv.Close()
-	_, err := newClient(t, u, nil).Search(context.Background(), Query{Q: "x"})
+	_, err := newClient(t, u, nil).Search(context.Background(), Query{Q: "secret-search-term"})
 	var se *Error
 	if !errors.As(err, &se) || se.Kind != KindUnreachable {
 		t.Fatalf("want unreachable, got %v", err)
+	}
+	if strings.Contains(err.Error(), "secret-search-term") {
+		t.Errorf("error must not contain the query: %v", err)
 	}
 }
 
