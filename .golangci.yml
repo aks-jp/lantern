@@ -23,6 +23,7 @@ linters:
         linters:
           - gosec
           - noctx
+          - unparam
 
 formatters:
   enable:
