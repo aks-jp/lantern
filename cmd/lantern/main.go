@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
@@ -31,10 +33,12 @@ func main() {
 	switch cmd {
 	case "serve":
 		os.Exit(serve())
+	case "healthcheck":
+		os.Exit(healthcheck(os.Getenv("MCP_LISTEN")))
 	case "version", "--version", "-v":
 		fmt.Println("lantern", version)
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q\nusage: lantern [serve|version]\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q\nusage: lantern [serve|healthcheck|version]\n", cmd)
 		os.Exit(2)
 	}
 }
@@ -127,4 +131,49 @@ func logStartup(cfg *config.Config, logger *slog.Logger) {
 	if cfg.SearXNGInsecureSkipVerify {
 		logger.Warn("TLS certificate verification for SearXNG is DISABLED (SEARXNG_INSECURE_SKIP_VERIFY=true); use only for testing")
 	}
+}
+
+// healthcheck queries /healthz on the local listener and returns the exit
+// code for Docker's HEALTHCHECK.
+func healthcheck(listen string) int {
+	target, err := healthURL(listen)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "healthcheck:", err)
+		return 1
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	// The target is derived from the operator-controlled MCP_LISTEN only.
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil) //nolint:gosec // see above
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "healthcheck:", err)
+		return 1
+	}
+	resp, err := http.DefaultClient.Do(req) //nolint:gosec // local health endpoint
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "healthcheck:", err)
+		return 1
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Fprintln(os.Stderr, "healthcheck: status", resp.StatusCode)
+		return 1
+	}
+	return 0
+}
+
+// healthURL derives the local /healthz URL from MCP_LISTEN; wildcard and
+// empty hosts map to the loopback address.
+func healthURL(listen string) (string, error) {
+	if listen == "" {
+		listen = ":8080"
+	}
+	host, port, err := net.SplitHostPort(listen)
+	if err != nil {
+		return "", fmt.Errorf("invalid MCP_LISTEN %q: %w", listen, err)
+	}
+	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
+		host = "127.0.0.1"
+	}
+	return "http://" + net.JoinHostPort(host, port) + "/healthz", nil
 }
