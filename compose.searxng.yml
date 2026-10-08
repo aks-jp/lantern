@@ -1,0 +1,12 @@
+# Override: join the Docker network of an existing SearXNG compose stack and
+# reach SearXNG by its service name (e.g. SEARXNG_URL=http://searxng:8080).
+# Find the network name with: docker network ls
+services:
+  lantern:
+    networks:
+      - searxng
+
+networks:
+  searxng:
+    name: ${SEARXNG_NETWORK:?set SEARXNG_NETWORK in .env}
+    external: true

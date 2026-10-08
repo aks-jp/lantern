@@ -1,0 +1,44 @@
+# Base service. Combine with one of the overrides via COMPOSE_FILE in .env:
+#   compose.searxng.yml  - join the Docker network of an existing SearXNG stack
+#   compose.remote.yml   - reach SearXNG via HTTPS with an API key
+services:
+  lantern:
+    build:
+      context: .
+      args:
+        VERSION: ${LANTERN_VERSION:-dev}
+    image: lantern:${LANTERN_VERSION:-dev}
+    container_name: lantern
+    restart: unless-stopped
+    environment:
+      SEARXNG_URL: ${SEARXNG_URL:?set SEARXNG_URL in .env}
+      SEARXNG_API_KEY_HEADER: ${SEARXNG_API_KEY_HEADER:-}
+      SEARXNG_TIMEOUT: ${SEARXNG_TIMEOUT:-}
+      MCP_API_KEYS_FILE: /run/secrets/mcp_keys
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-}
+      DEFAULT_SAFESEARCH: ${DEFAULT_SAFESEARCH:-}
+      MAX_RESULTS: ${MAX_RESULTS:-}
+      SNIPPET_MAX_CHARS: ${SNIPPET_MAX_CHARS:-}
+      ALLOWED_CATEGORIES: ${ALLOWED_CATEGORIES:-}
+      LOG_LEVEL: ${LOG_LEVEL:-}
+      LOG_FORMAT: ${LOG_FORMAT:-}
+    secrets:
+      - mcp_keys
+    ports:
+      - "127.0.0.1:${LANTERN_PORT:-8090}:8080"   # localhost only; put a TLS proxy in front for remote clients
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 64m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  mcp_keys:
+    file: ./secrets/mcp_keys.txt

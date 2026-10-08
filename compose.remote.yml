@@ -1,0 +1,12 @@
+# Override: reach SearXNG through a reverse proxy that requires an API key.
+# Put the key into secrets/searxng_api_key.txt.
+services:
+  lantern:
+    environment:
+      SEARXNG_API_KEY_FILE: /run/secrets/searxng_api_key
+    secrets:
+      - searxng_api_key
+
+secrets:
+  searxng_api_key:
+    file: ./secrets/searxng_api_key.txt
